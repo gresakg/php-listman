@@ -33,6 +33,30 @@ class listman {
 		}
 	}
 
+	public function import() {
+
+	}
+
+	public function subscribe() {
+		
+	}
+
+	public function validate() {
+
+	}
+
+	public function invalidate() {
+
+	}
+
+	public function unsubscribe() {
+
+	}
+
+	public function export() {
+
+	}
+
 	public function help() {
 		$this->display("Listman is a command line tool for managing mailing lists.");
 	}
