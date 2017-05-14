@@ -26,19 +26,29 @@ class listman {
 	public function __construct($args) {
 		$this->connect_db();
 		$this->args = $args;
-		if(empty($args[1])) {
+		if(empty($args[1]) || !method_exists($this, $args[1])) {
 			$this->help();
 		} else {
-			$this->$args[1];
+			$method = $args[1];
+			$this->$method();
 		}
 	}
 
 	public function import() {
+		$file = $this->args[2];
+		if(!file_exists($file)) {
+			$this->display("File not found!");
+		} else {
+			$handle = fopen($file,"r");
+			while($csv = fgetcsv($handle)) {
+				var_dump($csv);
+			}
+		}
 
 	}
 
 	public function subscribe() {
-		
+
 	}
 
 	public function validate() {
