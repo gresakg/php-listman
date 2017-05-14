@@ -13,9 +13,11 @@
 
 define('nl' , "\n");
 
+if(!file_exists("config.php")) {
+	die("Please, rename config.dist.php to config.php and edit the settings.");
+}
+
 $list = new listman($argv);
-
-
 
 class listman {
 
@@ -39,12 +41,13 @@ class listman {
 		echo nl;
 		echo $text;
 		echo nl;
-
 	}
 
 	protected function connect_db() {
 		require_once "rb.php";
-		R::setup('mysql:host=localhost;dbname=emails', 'gregor', 'dangajag');
+		require_once "config.php";
+		extract($config);
+		R::setup("mysql:host=$dbhost;dbname=$dbname", $dbuser, $dbpass);
 	}
 
 	public function __call($name, $args) {
