@@ -39,10 +39,8 @@ class listman {
 		if(!file_exists($file)) {
 			$this->display("File not found!");
 		} else {
-			$handle = fopen($file,"r");
-			while($csv = fgetcsv($handle)) {
-				var_dump($csv);
-			}
+			$this->set_csv_data($file);
+			
 		}
 
 	}
@@ -65,6 +63,23 @@ class listman {
 
 	public function export() {
 
+	}
+
+	protected function set_csv_data() {
+		$headers = array();
+		$handle = fopen($file,"r");
+		while($csv = fgetcsv($handle)) {
+			if(empty($headers)) {
+				$headers=$this->check_headers($csv);
+			}
+		}
+
+	}
+
+	protected function check_headers($headers) {
+		if(!in_array('emails',$csv)) {
+			$this->display('The csv file is missing the emails column header. Emails are mandatory.');
+		}
 	}
 
 	public function help() {
