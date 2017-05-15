@@ -65,21 +65,70 @@ class listman {
 
 	}
 
-	protected function set_csv_data() {
+	protected function set_csv_data($file) {
 		$headers = array();
 		$handle = fopen($file,"r");
 		while($csv = fgetcsv($handle)) {
 			if(empty($headers)) {
 				$headers=$this->check_headers($csv);
+			} else {
+				$email = R::findOne('emails', ' email = ? ',[$csv['email']]);
+				if(empty($email)) {
+					$email = R::dispense('emails');
+				} else {
+					// a specific operation should be needed for changing subscription status
+					$csv['subscriber'] = property_exists($this, 'subscriber')?$email->subscriber:$csv['subscriber'];
+				}
+				$csv['valid'] = $this->sanatize_email($csv['email']);
+				foreach($csv as $key => $item) {
+					$email->{$headers[$key]} = $item;
+				}
+				R::store($email);
 			}
 		}
+		//var_dump($data);
 
 	}
 
-	protected function check_headers($headers) {
-		if(!in_array('emails',$csv)) {
+	protected function check_headers($csv) {
+		if(!in_array('email',$csv)) {
 			$this->display('The csv file is missing the emails column header. Emails are mandatory.');
+			die;
+		} else {
+			return $csv;
 		}
+	}
+
+	protected function sanatize_email($email){
+		$valid = true;
+		if(!$this->check_format($email)) {
+			$error[] = "Email $email does not validate.";
+			$valid=false;
+		}
+		if(!$this->verify_host($email)) {
+			$error[] = "Emails $email host does not validate!";
+			$valid = false;
+		}
+		return $valid;
+	}
+
+	public function check_format($email) {
+		return preg_match('/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i', $email);
+	}
+
+	public function verify_host($email) {
+		$domain = substr(strrchr($email, "@"), 1);
+		$host = R::findOne('hosts',"host = ? ",[$domain]);
+		if(empty($host)) {
+			$dns = (int) checkdnsrr($domain);
+			$mx = (int) getmxrr($domain);
+			$host = R::dispense('hosts');
+			$host->host = $domain;
+			$host->dns = $dns;
+			$host->mx = $mx;
+			R::store($host);
+		}
+		return (bool) $host->mx;
 	}
 
 	public function help() {
