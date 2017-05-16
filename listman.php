@@ -72,14 +72,14 @@ class listman {
 			if(empty($headers)) {
 				$headers=$this->check_headers($csv);
 			} else {
-				$email = R::findOne('emails', ' email = ? ',[$csv['email']]);
+				$email = R::findOne('emails', ' email = ? ',[$csv[array_search('email',$headers)]]);
 				if(empty($email)) {
 					$email = R::dispense('emails');
 				} else {
 					// a specific operation should be needed for changing subscription status
-					$csv['subscriber'] = property_exists($this, 'subscriber')?$email->subscriber:$csv['subscriber'];
+					$csv[array_search('subscriber',$headers)] = property_exists($this, 'subscriber')?$email->subscriber:$csv[array_search('subscriber',$heades)];
 				}
-				$csv['valid'] = $this->sanatize_email($csv['email']);
+				$csv[array_search('valid',$headers)] = $this->sanatize_email($csv[array_search('email',$headers)]);
 				foreach($csv as $key => $item) {
 					$email->{$headers[$key]} = $item;
 				}
