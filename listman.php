@@ -70,19 +70,24 @@ class listman {
 		$handle = fopen($file,"r");
 		while($csv = fgetcsv($handle)) {
 			if(empty($headers)) {
-				$headers=$this->check_headers($csv);
+				$headers=$this->set_headers($csv);
 			} else {
+				// if email exist update it else create it
 				$email = R::findOne('emails', ' email = ? ',[$csv[array_search('email',$headers)]]);
 				if(empty($email)) {
 					$email = R::dispense('emails');
-				} else {
-					// a specific operation should be needed for changing subscription status
-					$csv[array_search('subscriber',$headers)] = property_exists($this, 'subscriber')?$email->subscriber:$csv[array_search('subscriber',$heades)];
-				}
-				$csv[array_search('valid',$headers)] = $this->sanatize_email($csv[array_search('email',$headers)]);
+				} 
+				//validate the email
+				$csv[array_search('valid',$headers)] = (int) $this->sanatize_email($csv[array_search('email',$headers)]);
+				// a specific operation should be needed for changing subscription status
+				// if the property exist, keep it as is else set it to 1 (in case of mistyped address ... we are importing subscribers, right?)
+				$csv[array_search('subscriber',$headers)] = property_exists($email, 'subscriber')?$email->subscriber:1;
+				$values = "";
 				foreach($csv as $key => $item) {
+					$values .= $item. ", ";
 					$email->{$headers[$key]} = $item;
 				}
+				$this->display('Storing '.$values);
 				R::store($email);
 			}
 		}
@@ -90,11 +95,13 @@ class listman {
 
 	}
 
-	protected function check_headers($csv) {
+	protected function set_headers($csv) {
 		if(!in_array('email',$csv)) {
 			$this->display('The csv file is missing the emails column header. Emails are mandatory.');
 			die;
 		} else {
+			if(!in_array('valid',$csv)) $csv[] = 'valid';
+			if(!in_array('subscriber',$csv)) $csv[] = 'subscriber';
 			return $csv;
 		}
 	}
@@ -121,7 +128,7 @@ class listman {
 		$host = R::findOne('hosts',"host = ? ",[$domain]);
 		if(empty($host)) {
 			$dns = (int) checkdnsrr($domain);
-			$mx = (int) getmxrr($domain);
+			$mx = (int) getmxrr($domain,$mxhosts);
 			$host = R::dispense('hosts');
 			$host->host = $domain;
 			$host->dns = $dns;
