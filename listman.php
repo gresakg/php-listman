@@ -125,6 +125,7 @@ class listman {
 
 	public function verify_host($email) {
 		$domain = substr(strrchr($email, "@"), 1);
+		$now = new DateTime(); 
 		$host = R::findOne('hosts',"host = ? ",[$domain]);
 		if(empty($host)) {
 			$dns = (int) checkdnsrr($domain);
@@ -133,6 +134,12 @@ class listman {
 			$host->host = $domain;
 			$host->dns = $dns;
 			$host->mx = $mx;
+			$host->lastcheck = $now->format('Y-m-d H:i:s');
+			R::store($host);
+		} elseif(DateTime::createFromFormat('Y-m-d H:i:s',$host->lastcheck)->add(new DateInterval('P30D')) > $now) {
+			$host->dns = (int) checkdnsrr($domain);
+			$host->mx = (int) getmxrr($domain,$mxhosts);
+			$host->lastcheck = $now->format('Y-m-d H:i:s');
 			R::store($host);
 		}
 		return (bool) $host->mx;
